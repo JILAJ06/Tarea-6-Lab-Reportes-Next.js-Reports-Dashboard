@@ -1,66 +1,86 @@
 import Link from 'next/link';
 import { z } from 'zod';
-import { getRankStudents } from '@/services/reportService';
+import { getProductivityRank } from '@/repositories/reportRepository';
 
-const filterSchema = z.object({ program: z.string().optional() });
-
+const filterSchema = z.object({ project: z.string().optional() });
 
 type Props = { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }
 
 export default async function Report5Page(props: Props) {
   const searchParams = await props.searchParams;
-  const { program } = filterSchema.parse({ program: searchParams.program });
-  const data = await getRankStudents(program);
-  const programs = ['Ing. Software', 'Arquitectura', 'Derecho'];
+  const { project } = filterSchema.parse({ project: searchParams.project });
+  const data = await getProductivityRank(project);
+
+  const projects = ['Plataforma E-commerce', 'Dashboard Financiero', 'IA para Predicción de Ventas'];
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200 px-8 py-4 shadow-sm">
-        <div className="max-w-6xl mx-auto flex items-center text-sm">
-          <Link href="/" className="text-slate-500 hover:text-blue-900 font-medium">Inicio</Link>
-          <span className="mx-2 text-slate-300">/</span>
-          <span className="text-amber-700 font-bold">Cuadro de Honor</span>
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+      {/* --- UNIFIED NAVBAR --- */}
+      <nav className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">DH</div>
+            <span className="font-bold text-lg tracking-tight">Dashboard<span className="text-indigo-600">Corporativo</span></span>
+          </div>
+          <Link href="/" className="text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">← Volver al Inicio</Link>
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto px-8 py-10">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-serif font-bold text-slate-900 mb-2">Excelencia Académica</h1>
-          <p className="text-slate-600">Ranking oficial de estudiantes destacados por programa educativo.</p>
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900">Top Performers</h1>
+          <p className="text-slate-500 mt-2 mb-6">Ranking de productividad por proyecto.</p>
+          
+          <div className="flex flex-wrap gap-2">
+             <Link href="/reports/5" className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${!project ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>Global</Link>
+             {projects.map((p) => (
+                <Link key={p} href={`/reports/5?project=${encodeURIComponent(p)}`} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${project === p ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                   {p}
+                </Link>
+             ))}
+          </div>
         </div>
 
-        <div className="flex justify-center gap-2 mb-8">
-          <Link href="/reports/5" className={`px-4 py-1 text-sm font-medium border ${!program ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}`}>Todos</Link>
-          {programs.map((p) => (
-            <Link key={p} href={`/reports/5?program=${encodeURIComponent(p)}`} className={`px-4 py-1 text-sm font-medium border ${program === p ? 'bg-blue-900 text-white border-blue-900' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}`}>{p}</Link>
-          ))}
-        </div>
-
-        <div className="bg-white border border-slate-200 shadow-lg rounded-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-slate-100">
+        {/* --- TABLE CONTAINER (MATCHING VIEW 1 & 3) --- */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-semibold">
+                <th className="px-6 py-4 text-center w-20">Rank</th>
+                <th className="px-6 py-4">Empleado</th>
+                <th className="px-6 py-4">Proyecto</th>
+                <th className="px-6 py-4 text-right">Horas Registradas</th>
+              </tr>
+            </thead>
             <tbody className="divide-y divide-slate-100">
               {data.map((row) => (
-                <tr key={row.student_id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 w-16 text-center">
-                    <span className={`inline-block w-8 h-8 leading-8 rounded-full font-serif font-bold text-sm ${
-                      row.rank_position === 1 ? 'bg-amber-100 text-amber-800 border border-amber-300' :
-                      row.rank_position === 2 ? 'bg-slate-200 text-slate-700 border border-slate-300' :
-                      row.rank_position === 3 ? 'bg-orange-100 text-orange-800 border border-orange-300' :
-                      'text-slate-400'
+                <tr key={`${row.employee_id}-${row.project_name}`} className="hover:bg-slate-50/80 transition-colors">
+                  <td className="px-6 py-4 text-center">
+                    <span className={`inline-flex w-8 h-8 items-center justify-center rounded-full font-bold text-sm ${
+                        row.productivity_rank === 1 ? 'bg-yellow-100 text-yellow-700' :
+                        row.productivity_rank === 2 ? 'bg-slate-200 text-slate-700' :
+                        row.productivity_rank === 3 ? 'bg-orange-100 text-orange-700' :
+                        'text-slate-400 bg-slate-50'
                     }`}>
-                      {row.rank_position}
+                       {row.productivity_rank}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="font-bold text-slate-900 text-lg">{row.name}</p>
-                    <p className="text-xs text-slate-500 uppercase tracking-widest">{row.program}</p>
+                     <div className="font-bold text-slate-900">{(row as any).employee_name || row.full_name}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                     <span className="inline-block px-2 py-1 bg-slate-50 text-slate-600 rounded text-xs border border-slate-200 font-medium">
+                        {row.project_name}
+                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <p className="text-2xl font-serif font-bold text-slate-800">{Number(row.final_average).toFixed(2)}</p>
-                    <p className="text-xs text-slate-400">Promedio Final</p>
+                     <span className="font-mono text-lg font-bold text-indigo-600">{Number(row.hours_worked)}</span>
                   </td>
                 </tr>
               ))}
+              {data.length === 0 && (
+                 <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-400">Selecciona un proyecto para ver el ranking.</td></tr>
+              )}
             </tbody>
           </table>
         </div>

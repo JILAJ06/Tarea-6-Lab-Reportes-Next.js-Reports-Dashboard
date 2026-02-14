@@ -1,101 +1,72 @@
 import Link from 'next/link';
-import { getDepartmentMetrics } from '@/repositories/reportRepository';
+import { getActiveProjects } from '@/repositories/reportRepository';
 
-export default async function Report1Page() {
-  const data = await getDepartmentMetrics();
+type Props = { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }
+
+export default async function Report2Page(props: Props) {
+  const searchParams = await props.searchParams;
+  const page = Number(searchParams.page) || 1;
+  const data = await getActiveProjects(page);
+  const hasNextPage = data.length === 5;
 
   const formatMoney = (amount: string | number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-      minimumFractionDigits: 2,
-    }).format(Number(amount));
+    return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(Number(amount));
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* --- NAV --- */}
-      <nav className="bg-white border-b border-slate-200 px-8 py-4 shadow-sm">
-        <div className="max-w-6xl mx-auto flex items-center text-sm">
-          <Link href="/" className="text-slate-500 hover:text-blue-900 font-medium">Inicio</Link>
-          <span className="mx-2 text-slate-300">/</span>
-          <span className="text-blue-900 font-bold">Métricas Departamentales</span>
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+      {/* --- UNIFIED NAVBAR --- */}
+      <nav className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">DH</div>
+            <span className="font-bold text-lg tracking-tight">Dashboard<span className="text-indigo-600">Corporativo</span></span>
+          </div>
+          <Link href="/" className="text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">← Volver al Inicio</Link>
         </div>
       </nav>
 
-      {/* --- CONTENIDO --- */}
-      <main className="max-w-6xl mx-auto px-8 py-10">
-        <div className="mb-8">
-          <h1 className="text-3xl font-serif font-bold text-slate-900">Reporte Financiero por Área</h1>
-          <p className="text-slate-600 mt-2">Resumen de personal, costos de nómina y salud presupuestal.</p>
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        <div className="flex justify-between items-end mb-8">
+           <header>
+             <h1 className="text-3xl font-bold text-slate-900">Proyectos Activos</h1>
+             <p className="text-slate-500 mt-2">Monitoreo de recursos y horas consumidas.</p>
+           </header>
+           
+           <div className="flex gap-2">
+             <Link href={`/reports/2?page=${page - 1}`} className={`px-4 py-2 bg-white border border-slate-300 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50 ${page <= 1 ? 'pointer-events-none opacity-50' : ''}`}>Anterior</Link>
+             <Link href={`/reports/2?page=${page + 1}`} className={`px-4 py-2 bg-white border border-slate-300 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 ${!hasNextPage ? 'pointer-events-none opacity-50' : ''}`}>Siguiente</Link>
+           </div>
         </div>
 
-        <div className="bg-white shadow-md rounded-sm border border-slate-200 overflow-hidden">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-800 text-white">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-serif tracking-wider uppercase">Departamento</th>
-                <th className="px-6 py-4 text-center text-xs font-serif tracking-wider uppercase">Personal Activo</th>
-                <th className="px-6 py-4 text-right text-xs font-serif tracking-wider uppercase">Salario Promedio</th>
-                <th className="px-6 py-4 text-right text-xs font-serif tracking-wider uppercase">Costo Nómina (Mensual)</th>
-                <th className="px-6 py-4 text-center text-xs font-serif tracking-wider uppercase">Uso de Presupuesto</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-slate-200">
-              {data.map((row: any, idx) => {
-                const budgetPct = Number(row.budget_usage_pct || 0); 
-                
-                return (
-                  <tr key={row.department_id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                    
-                    {/* Columna 1: Nombre del Departamento */}
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-slate-900">{row.department_name}</div>
-                      <div className="text-xs text-slate-500 font-mono">ID: {row.department_id}</div>
-                    </td>
+        {/* --- GRID LAYOUT (MATCHING STYLE) --- */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {data.map((row) => (
+            <div key={row.project_id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-4">
+                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center text-xl">🚀</div>
+                <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded border border-emerald-100 uppercase">En Curso</span>
+              </div>
+              
+              <h3 className="font-bold text-lg text-slate-900 mb-1 truncate">{row.project_name}</h3>
+              <p className="text-xs text-slate-400 font-mono mb-6">ID: {row.project_id}</p>
 
-                    {/* Columna 2: Conteo de Empleados */}
-                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-slate-700 font-mono">
-                      <span className="bg-blue-100 text-blue-800 py-1 px-3 rounded-full font-bold">
-                        {row.employee_count}
-                      </span>
-                    </td>
-
-                    {/* Columna 3: Salario Promedio */}
-                    <td className="px-6 py-4 whitespace-nowrap text-right font-mono text-sm text-slate-600">
-                      {formatMoney(row.average_salary)}
-                    </td>
-
-                    {/* Columna 4: Nómina Total */}
-                    <td className="px-6 py-4 whitespace-nowrap text-right font-mono text-sm font-bold text-slate-800">
-                      {/* Nota: Asegúrate que tu vista SQL devuelve 'total_monthly_payroll' o calcúlalo aquí */}
-                      {formatMoney(row.total_monthly_payroll || (Number(row.average_salary) * Number(row.employee_count)))}
-                    </td>
-
-                    {/* Columna 5: Barra de Presupuesto (Visual) */}
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="w-full max-w-[120px] bg-slate-200 h-2 rounded-full overflow-hidden mb-1">
-                          <div 
-                            className={`h-full ${budgetPct > 90 ? 'bg-red-600' : budgetPct > 70 ? 'bg-amber-500' : 'bg-emerald-600'}`} 
-                            style={{ width: `${Math.min(budgetPct, 100)}%` }}
-                          />
-                        </div>
-                        <span className={`text-xs font-bold ${budgetPct > 100 ? 'text-red-600' : 'text-slate-500'}`}>
-                           {budgetPct}% del anual
-                        </span>
-                      </div>
-                    </td>
-
-                  </tr>
-                );
-              })}
-
-              {data.length === 0 && (
-                <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500 italic">No se encontraron departamentos registrados.</td></tr>
-              )}
-            </tbody>
-          </table>
+              <div className="space-y-3">
+                 <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Presupuesto:</span>
+                    <span className="font-bold text-slate-800">{formatMoney(row.budget)}</span>
+                 </div>
+                 <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Equipo:</span>
+                    <span className="font-bold text-slate-800">{row.assigned_employees} personas</span>
+                 </div>
+                 <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-400 uppercase">Horas Totales</span>
+                    <span className="text-lg font-bold text-indigo-600">{row.total_hours_worked}h</span>
+                 </div>
+              </div>
+            </div>
+          ))}
         </div>
       </main>
     </div>
