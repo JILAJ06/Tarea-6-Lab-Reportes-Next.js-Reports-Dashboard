@@ -8,14 +8,17 @@ BEGIN
    END IF;
 END
 $do$;
+
 GRANT CONNECT ON DATABASE postgres TO dashboard_user;
 GRANT USAGE ON SCHEMA public TO dashboard_user;
+
 REVOKE ALL ON employees FROM dashboard_user;
 REVOKE ALL ON departments FROM dashboard_user;
 REVOKE ALL ON projects FROM dashboard_user;
 REVOKE ALL ON project_assignments FROM dashboard_user;
-GRANT SELECT ON department_overview_vw TO dashboard_user;
-GRANT SELECT ON employee_workload_vw TO dashboard_user;
-GRANT SELECT ON project_status_performance_vw TO dashboard_user;
-GRANT SELECT ON salary_ranking_vw TO dashboard_user;
-GRANT SELECT ON project_financial_cte_vw TO dashboard_user;
+
+GRANT SELECT ON vw_department_metrics TO dashboard_user;        -- Vista 1
+GRANT SELECT ON vw_active_projects_load TO dashboard_user;      -- Vista 2
+GRANT SELECT ON vw_salary_analysis TO dashboard_user;           -- Vista 3
+GRANT SELECT ON vw_budget_health TO dashboard_user;             -- Vista 4
+GRANT SELECT ON vw_project_productivity_rank TO dashboard_user; -- Vista 5

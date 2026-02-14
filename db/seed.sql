@@ -1,3 +1,4 @@
+
 INSERT INTO departments (id, name, location, budget) VALUES
 (1, 'Ingeniería de Software', 'Madrid', 500000.00),
 (2, 'Recursos Humanos', 'Barcelona', 150000.00),
